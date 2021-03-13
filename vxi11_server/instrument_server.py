@@ -199,8 +199,8 @@ class Vxi11Server(socketserver.ThreadingMixIn, rpc.TCPServer):
         del self._link_registry[link_id]
         return
 
-    #def link_name(self, link_id):
-    #    return self._link_registry[link_id]
+    def link_get_device_instance(self, link_id):
+        return self._link_registry[link_id]
     
     def link_abort(self, link_id):
         try:
@@ -270,6 +270,24 @@ class Vxi11CoreHandler(Vxi11Handler):
         try:
             logger.debug('Device name "%s"', device_name)
             self.link_id, self.device = self.server.link_create(device_name)
+
+            # is this a gpib bridge device?
+            if ',' in device_name:
+                # get primary  and secondary adress
+                adr=device_name.split(",")
+                if len(adr)>2:
+                    self.secondary=adr[2]
+                else:
+                    self.secondary=None
+                if len(adr)>1:
+                    self.primary=adr[1]
+                else:
+                    self.primary=None
+#xxx check this later                
+#            if device_name in ( 'inst0', 'gpib0' ):
+#                self.device.device_list = self.server.device_list
+#            abort_port = self.server.abort_port
+
         except KeyError:
             error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
             logger.debug("Create link failed")
@@ -321,6 +339,15 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and maybe route it there
+            if self.primary is not None:
+                logger.debug("write to bridge device")
+                try:
+                    bridge=self.server.link_get_device_instance(link_id)
+                    if bridge.device_name in self.device_name:
+                        error = bridge.device_write(opaque_data)
+                except KeyError:
+                    error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         elif len(opaque_data) > MAX_RECEIVE_SIZE:
             error = vxi11.ERR_PARAMETER_ERROR
         else:
@@ -348,6 +375,15 @@ class Vxi11CoreHandler(Vxi11Handler):
         
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and maybe route it there
+            if self.primary is not None:
+                logger.debug("write to bridge device")
+                try:
+                    bridge=self.server.link_get_device_instance(link_id)
+                    if bridge.device_name in self.device_name:
+                        error, opaque_data = bridge.device_read()
+                except KeyError:
+                    error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:
@@ -368,6 +404,9 @@ class Vxi11CoreHandler(Vxi11Handler):
         stb=0
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and issue error according to spec
+            if self.primary is not None:
+                error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:
@@ -387,6 +426,15 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and maybe route it there
+            if self.primary is not None:
+                logger.debug("write to bridge device")
+                try:
+                    bridge=self.server.link_get_device_instance(link_id)
+                    if bridge.device_name in self.device_name:
+                        error = bridge.device_trigger(flags, lock_timeout, io_timeout)
+                except KeyError:
+                    error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:
@@ -405,6 +453,15 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and maybe route it there
+            if self.primary is not None:
+                logger.debug("write to bridge device")
+                try:
+                    bridge=self.server.link_get_device_instance(link_id)
+                    if bridge.device_name in self.device_name:
+                        error = bridge.device_clear(flags, lock_timeout, io_timeout)
+                except KeyError:
+                    error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:
@@ -423,6 +480,9 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and issue error according to spec
+            if self.primary is not None:
+                error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
             with self.device.lock.is_open(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:
@@ -441,6 +501,9 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
+            #check if this is the link id for the bridge device and issue error according to spec
+            if self.primary is not None:
+                error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:
@@ -547,7 +610,7 @@ class Vxi11CoreHandler(Vxi11Handler):
 class InstrumentServer():
     '''Maintains a registry of device handlers and routes incoming client RPC's to appropriate handler.
     '''
-    def __init__(self, default_device_handler=None):
+    def __init__(self, default_device_handler=None,default_device_name='inst0'):
         '''Initialize the instrument and start a default device handler on inst0.
         
         default_device_handler: (optional) a device_handler class to be use
@@ -561,7 +624,7 @@ class InstrumentServer():
         if default_device_handler is None:
             default_device_handler = Instrument.DefaultInstrumentDevice
 
-        self.add_device_handler(default_device_handler, 'inst0')
+        self.add_device_handler(default_device_handler, default_device_name)
         return
 
     def add_device_handler(self, device_handler, device_name=None ):

@@ -1,3 +1,6 @@
+#
+# pylint: disable=C0303,C0301,C0302,C0115,C0103,C0116,R0201
+
 import sys
 import os
 import signal
@@ -12,32 +15,35 @@ _logging = logging.getLogger(__name__)
 
 
 def signal_handler(signal, frame):
-    logger.info('Handling Ctrl+C!')
+    _logging.info('Handling Ctrl+C!')
     instr_server.close()
     sys.exit(0)
                                         
 
 class GPIBLikeDefaultDevice(vxi11.instrument_device.DefaultInstrumentDevice):
-    def __init__(self, device_name):
-        super().__init__(device_name)
-        self.idn = 'ulda', 'gpib-bridge', '1', 'V1.0'
+    def __init__(self, device_name, device_lock):
+        super().__init__(device_name, device_lock)
         self.result = 'empty'
         self.atn_enabled=False
         self.ren_enabled=False
         self.srq_active=False
         self.busaddr=0 # something
+        self.idn=''
 
-    def device_clear(self, flags, lock_timeout, io_timeout): # 15, generic params
+    def device_init(self):
+        self.idn = 'ulda', 'gpib-bridge', '1', 'V1.0'
+        
+    def device_clear(self, flags, io_timeout): # 15, generic params
         "The device_clear RPC is used to send a device clear to a device"
         _logging.debug("Device %s cleared",self.device_name)
         error = vxi11.Error.NO_ERROR
         return error
 
-    def device_write(self, opaque_data):
+    def device_write(self, opaque_data, flags, io_timeout):
         _logging.debug("Default device recieved: %r",opaque_data)
-        return super().device_write(opaque_data)
+        return super().device_write(opaque_data, flags, io_timeout)
 
-    def device_docmd(self,flags, io_timeout, lock_timeout, cmd, network_order, data_size, opaque_data_in):
+    def device_docmd(self, flags, io_timeout, cmd, network_order, data_size, opaque_data_in):
         # emulate some bus function commands
         error = vxi11.Error.NO_ERROR
         _logging.debug("Device %s docmd: %x",self.device_name,cmd)
@@ -118,34 +124,38 @@ class GPIBLikeDefaultDevice(vxi11.instrument_device.DefaultInstrumentDevice):
 
 class GPIBLikeDevice(vxi11.InstrumentDevice):
 
-    def __init__(self, device_name):
-        super().__init__(device_name)
+    def __init__(self, device_name, device_lock):
+        super().__init__(device_name, device_lock)
 
         self.response = ""
 
-    def device_write(self, opaque_data):
+    def device_write(self, opaque_data, flags, io_timeout):
         "The device_write RPC is used to write data to the specified device"
         error = vxi11.Error.NO_ERROR
 
-        commands= opaque_data.decode("ascii").split(";")
+        commands= opaque_data.decode("ascii").rstrip('\r\n').split(";")
         for cmd in commands:
             error= self._processCommand(cmd.strip())
             if error != vxi11.Error.NO_ERROR:
                 break
-            self.addResponse(";")#  add a separator to the end of response
+            self._addResponse(";")#  add a separator to the end of response
 
         self.response=self.response.rstrip(";") # remove last separator
         return error
 
-    def device_read(self): 
+    def device_read(self, request_size, term_char, flags, io_timeout): 
         "The device_read RPC is used to read data from the device to the controller"
         error = vxi11.Error.NO_ERROR
-        aStr=self.response
+        reason = vxi11.ReadRespReason.END
+        if len(self.response)>0:
+            aStr=self.response + '\r\n'
+        else:
+            aStr=""
         self.response=""
         # returns opaque_data!
-        return error, aStr.encode("ascii","ignore")
+        return error, reason, aStr.encode("ascii","ignore")
 
-    def device_clear(self, flags, lock_timeout, io_timeout): # 15, generic params
+    def device_clear(self, flags,  io_timeout): # 15, generic params
         "The device_clear RPC is used to send a device clear to a device"
         _logging.debug("Device %s cleared",self.device_name)
         error = vxi11.Error.NO_ERROR

@@ -1,3 +1,15 @@
+## VXI-11.2 GPIB bridge Code in Python
+
+This code is  based on the [VXI-11 Server in python](https://github.com/coburnw/python-vxi11-server),
+you can find the original implementation there. I will upstream bugfixes from my tree there.
+
+This repository adds code to support the VXI-11.2 spec to build a LAN-to-GPIB bridge and add virtual GPIB devices there.
+Use this if you want to implement your own GPIB bridge or (like me) simulate a complete GPIB-Bridge including some GPIB devices.
+
+See [demo_servers/gpib-bridge.py](https://github.com/ulda/python-vxi11-server/blob/GPIB-bridge-upstream/demo_servers/gpib-bridge.py) on how this code works.
+
+below starts the  original readme...
+
 ## VXI-11 Server in Python
 
 A VXI-11 Server implementation in Python that allows your BeagleBone Black or Raspberry PI appear as a VXI-11 device.

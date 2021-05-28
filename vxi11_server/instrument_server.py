@@ -556,7 +556,11 @@ class Vxi11CoreHandler(Vxi11Handler):
         logger.debug('DEVICE_CREATE_INTR_CHAN %s', params)
         host_addr, host_port, prog_num, prog_vers, prog_family = params
 
-        error = self.device.create_intr_chan(host_addr, host_port, prog_num, prog_vers, prog_family)
+        if self.device.secondary is not None:
+            # bridged devices should not create an intr_chan directly!
+            error=vxi11.ERR_OPERATION_NOT_SUPPORTED
+        else:
+            error = self.device.create_intr_chan(host_addr, host_port, prog_num, prog_vers, prog_family)
 
         self.turn_around()
         self.packer.pack_device_error(error)
@@ -568,7 +572,11 @@ class Vxi11CoreHandler(Vxi11Handler):
         # no params (void) for this function according to vxi11-spec B.6.13 V1.0 !
         logger.debug('DEVICE_DESTROY_INTR_CHAN')
 
-        error = self.device.destroy_intr_chan()
+        if self.device.secondary is not None:
+            # bridged devices should not have an intr_chan !
+            error=vxi11.ERR_OPERATION_NOT_SUPPORTED
+        else:
+            error = self.device.destroy_intr_chan()
 
         self.turn_around()
         self.packer.pack_device_error(error)
@@ -592,6 +600,10 @@ class Vxi11CoreHandler(Vxi11Handler):
                     logger.debug("bridged enable_srq 1")
                     if  self.device.device_name in bridged.device_name:
                         logger.debug("bridged name is %s",bridged.device_name)
+
+                        # we must route the srq through the interrupt channel of the bridge interface!
+                        # so hack the bridged device to signal to the bridge interfacees INTR_CHAN
+                        bridged.intr_client= self.device.intr_client if enable else None
                         error = bridged.device_enable_srq(enable,handle)
 
                     else:

@@ -271,23 +271,18 @@ class Vxi11CoreHandler(Vxi11Handler):
             logger.debug('Device name "%s"', device_name)
             self.link_id, self.device = self.server.link_create(device_name)
 
-            # is this a gpib bridge device?
+            # is this a bridged gpib device connected to a bridge interface?
             if ',' in device_name:
                 # get primary  and secondary adress
                 adr=device_name.split(",")
                 if len(adr)>2:
-                    self.secondary=adr[2]
+                    self.device.secondary=adr[2]
                 else:
-                    self.secondary=None
+                    self.device.secondary=None
                 if len(adr)>1:
-                    self.primary=adr[1]
+                    self.device.primary=adr[1]
                 else:
-                    self.primary=None
-#xxx check this later                
-#            if device_name in ( 'inst0', 'gpib0' ):
-#                self.device.device_list = self.server.device_list
-#            abort_port = self.server.abort_port
-
+                    self.device.primary=None
         except KeyError:
             error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
             logger.debug("Create link failed")
@@ -340,13 +335,13 @@ class Vxi11CoreHandler(Vxi11Handler):
         if link_id != self.link_id:
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and maybe route it there
-            if self.primary is not None:
-                logger.debug("write to bridge device")
+            #check if this is the link id for the bridged device and maybe route it there
+            if self.device.primary is not None:
+                logger.debug("write to device via bridge")
                 try:
-                    bridge=self.server.link_get_device_instance(link_id)
-                    if self.device.device_name in  bridge.device_name:
-                        error = bridge.device_write(opaque_data, flags, io_timeout)
+                    bridged=self.server.link_get_device_instance(link_id)
+                    if self.device.device_name in  bridged.device_name:
+                        error = bridged.device_write(opaque_data, flags, io_timeout)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         elif len(opaque_data) > MAX_RECEIVE_SIZE:
@@ -377,13 +372,13 @@ class Vxi11CoreHandler(Vxi11Handler):
         if link_id != self.link_id:
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and maybe route it there
-            if self.primary is not None:
-                logger.debug("read from bridge device")
+            #check if this is the link id for the bridged device and maybe route it there
+            if self.device.primary is not None:
+                logger.debug("read from bridged device")
                 try:
-                    bridge=self.server.link_get_device_instance(link_id)
-                    if self.device.device_name in  bridge.device_name:
-                        error, reason, opaque_data = bridge.device_read(request_size, term_char, flags, io_timeout)
+                    bridged=self.server.link_get_device_instance(link_id)
+                    if self.device.device_name in  bridged.device_name:
+                        error, reason, opaque_data = bridged.device_read(request_size, term_char, flags, io_timeout)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
@@ -406,8 +401,8 @@ class Vxi11CoreHandler(Vxi11Handler):
         stb=0
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and issue error according to spec
-            if self.primary is not None:
+            #check if this is the link id for the bridged device and issue error according to spec
+            if self.device.primary is not None:
                 error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
@@ -429,13 +424,13 @@ class Vxi11CoreHandler(Vxi11Handler):
         if link_id != self.link_id:
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and maybe route it there
-            if self.primary is not None:
-                logger.debug("Trigger to bridge device")
+            #check if this is the link id for the bridged device and maybe route it there
+            if self.device.primary is not None:
+                logger.debug("Trigger to bridged device")
                 try:
-                    bridge=self.server.link_get_device_instance(link_id)
-                    if bridge.device_name in self.device.device_name:
-                        error = bridge.device_trigger(flags, io_timeout)
+                    bridged=self.server.link_get_device_instance(link_id)
+                    if bridged.device_name in self.device.device_name:
+                        error = bridged.device_trigger(flags, io_timeout)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
@@ -457,16 +452,16 @@ class Vxi11CoreHandler(Vxi11Handler):
         if link_id != self.link_id:
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and maybe route it there
-            if self.primary is not None:
-                logger.debug("device_clear to bridge device")
+            #check if this is the link id for the bridged device and maybe route it there
+            if self.device.primary is not None:
+                logger.debug("device_clear to bridged device")
                 try:
-                    bridge=self.server.link_get_device_instance(link_id)
-                    logger.debug("bridge dev-clear 1")
-                    if  self.device.device_name in bridge.device_name:
-                        error = bridge.device_clear(flags, io_timeout)
+                    bridged=self.server.link_get_device_instance(link_id)
+                    logger.debug("bridged dev-clear 1")
+                    if  self.device.device_name in bridged.device_name:
+                        error = bridged.device_clear(flags, io_timeout)
                     else:
-                        logger.debug("bridge dev-clear invalid bridge dev name %s %s",  bridge.device_name, self.device.device_name)
+                        logger.debug("bridged dev-clear invalid bridged dev name %s %s",  bridged.device_name, self.device.device_name)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
@@ -487,8 +482,8 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         if link_id != self.link_id:
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and issue error according to spec
-            if self.primary is not None:
+            #check if this is the link id for the bridged device and issue error according to spec
+            if self.device.primary is not None:
                 error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
             with self.device.lock.is_open(link_id, flags, lock_timeout) as error:
@@ -509,8 +504,8 @@ class Vxi11CoreHandler(Vxi11Handler):
         if link_id != self.link_id:
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and issue error according to spec
-            if self.primary is not None:
+            #check if this is the link id for the bridged device and issue error according to spec
+            if self.device.primary is not None:
                 error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
@@ -589,17 +584,18 @@ class Vxi11CoreHandler(Vxi11Handler):
         if link_id != self.link_id:
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
-            #check if this is the link id for the bridge device and maybe route it there
-            if self.primary is not None:
-                logger.debug("device_enable_srq to bridge device")
+            #check if this is the link id for the bridged device and maybe route it there
+            if self.device.primary is not None:
+                logger.debug("device_enable_srq to bridged device")
                 try:
-                    bridge=self.server.link_get_device_instance(link_id)
-                    logger.debug("bridge enable_srq 1")
-                    if  self.device.device_name in bridge.device_name:
-                        logger.debug("bridge name is %s",bridge.device_name)
-                        error = bridge.device_enable_srq(enable,handle)
+                    bridged=self.server.link_get_device_instance(link_id)
+                    logger.debug("bridged enable_srq 1")
+                    if  self.device.device_name in bridged.device_name:
+                        logger.debug("bridged name is %s",bridged.device_name)
+                        error = bridged.device_enable_srq(enable,handle)
+
                     else:
-                        logger.debug("bridge enable_srq invalid bridge dev name %s  %s",  bridge.device_name, self.device.device_name)
+                        logger.debug("bridged enable_srq invalid bridged dev name %s  %s",  bridged.device_name, self.device.device_name)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:

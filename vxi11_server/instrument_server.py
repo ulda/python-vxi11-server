@@ -338,6 +338,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         link_id, io_timeout, lock_timeout, flags, opaque_data = params
 
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridge device and maybe route it there
             if self.primary is not None:
@@ -374,6 +375,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         reason = 0
         
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridge device and maybe route it there
             if self.primary is not None:
@@ -425,6 +427,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         link_id, flags, lock_timeout, io_timeout = params
 
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridge device and maybe route it there
             if self.primary is not None:
@@ -452,6 +455,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         link_id, flags, lock_timeout, io_timeout = params
 
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridge device and maybe route it there
             if self.primary is not None:
@@ -503,6 +507,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         link_id, flags, lock_timeout, io_timeout = params
 
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridge device and issue error according to spec
             if self.primary is not None:
@@ -540,6 +545,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         link_id = params
  
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
         else:
             error = self.device.lock.release(link_id)
@@ -581,6 +587,7 @@ class Vxi11CoreHandler(Vxi11Handler):
         link_id, enable, handle = params
 
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridge device and maybe route it there
             if self.primary is not None:
@@ -589,13 +596,14 @@ class Vxi11CoreHandler(Vxi11Handler):
                     bridge=self.server.link_get_device_instance(link_id)
                     logger.debug("bridge enable_srq 1")
                     if  self.device.device_name in bridge.device_name:
+                        logger.debug("bridge name is %s",bridge.device_name)
                         error = bridge.device_enable_srq(enable,handle)
                     else:
                         logger.debug("bridge enable_srq invalid bridge dev name %s  %s",  bridge.device_name, self.device.device_name)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
-
         else:
+            logger.debug("enable_srq 2")
             error = self.device.device_enable_srq(enable,handle)
 
         self.turn_around()
@@ -611,6 +619,7 @@ class Vxi11CoreHandler(Vxi11Handler):
 
         opaque_data_out = b""
         if link_id != self.link_id:
+            logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:

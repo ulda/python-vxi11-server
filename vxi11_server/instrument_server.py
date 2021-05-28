@@ -345,7 +345,7 @@ class Vxi11CoreHandler(Vxi11Handler):
                 try:
                     bridge=self.server.link_get_device_instance(link_id)
                     if self.device.device_name in  bridge.device_name:
-                        error = bridge.device_write(opaque_data)
+                        error = bridge.device_write(opaque_data, flags, io_timeout)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         elif len(opaque_data) > MAX_RECEIVE_SIZE:
@@ -381,7 +381,7 @@ class Vxi11CoreHandler(Vxi11Handler):
                 try:
                     bridge=self.server.link_get_device_instance(link_id)
                     if self.device.device_name in  bridge.device_name:
-                        error, opaque_data = bridge.device_read()
+                        error, reason, opaque_data = bridge.device_read(request_size, term_char, flags, io_timeout)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
@@ -432,7 +432,7 @@ class Vxi11CoreHandler(Vxi11Handler):
                 try:
                     bridge=self.server.link_get_device_instance(link_id)
                     if bridge.device_name in self.device.device_name:
-                        error = bridge.device_trigger(flags, lock_timeout, io_timeout)
+                        error = bridge.device_trigger(flags, io_timeout)
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
@@ -460,7 +460,7 @@ class Vxi11CoreHandler(Vxi11Handler):
                     bridge=self.server.link_get_device_instance(link_id)
                     logger.debug("bridge dev-clear 1")
                     if  self.device.device_name in bridge.device_name:
-                        error = bridge.device_clear(flags, lock_timeout, io_timeout)
+                        error = bridge.device_clear(flags, io_timeout)
                     else:
                         logger.debug("bridge dev-clear invalid bridge dev name %s %s",  bridge.device_name, self.device.device_name)
                 except KeyError:

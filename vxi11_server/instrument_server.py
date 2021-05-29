@@ -271,18 +271,6 @@ class Vxi11CoreHandler(Vxi11Handler):
             logger.debug('Device name "%s"', device_name)
             self.link_id, self.device = self.server.link_create(device_name)
 
-            # is this a bridged gpib device connected to a bridge interface?
-            if ',' in device_name:
-                # get primary  and secondary adress
-                adr=device_name.split(",")
-                if len(adr)>2:
-                    self.device.secondary=adr[2]
-                else:
-                    self.device.secondary=None
-                if len(adr)>1:
-                    self.device.primary=adr[1]
-                else:
-                    self.device.primary=None
         except KeyError:
             error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
             logger.debug("Create link failed")

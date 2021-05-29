@@ -48,6 +48,17 @@ class InstrumentDevice(object):
         self.device_name = device_name
         self.lock = device_lock
 
+        # is this a bridged gpib device connected to a bridge interface?
+        self.primary=None
+        self.secondary=None
+        if 'gpib' in device_name:
+            # get primary  and secondary adress
+            adr=device_name.split(",")
+            if len(adr)>2:
+                self.secondary=adr[2]
+            if len(adr)>=1:
+                self.primary=adr[0]
+        
         self.intr_client = None
         self.srq_enabled = False
         self.srq_handle = None

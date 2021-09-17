@@ -391,7 +391,13 @@ class Vxi11CoreHandler(Vxi11Handler):
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
             #check if this is the link id for the bridged device and issue error according to spec
             if self.device.primary is not None and self.device.secondary is None:
-                error=vxi11.ERR_OPERATION_NOT_SUPPORTED
+                # error=vxi11.ERR_OPERATION_NOT_SUPPORTED
+                try:
+                    bridged=self.server.link_get_device_instance(link_id)
+                    if self.device.device_name in  bridged.device_name:
+                        error, stb = bridged.device_readstb(flags, io_timeout)
+                except KeyError:
+                    error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
             with self.device.lock(link_id, flags, lock_timeout) as error:
                 if error == vxi11.ERR_NO_ERROR:

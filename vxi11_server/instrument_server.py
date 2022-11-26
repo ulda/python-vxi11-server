@@ -335,10 +335,8 @@ class Vxi11CoreHandler(Vxi11Handler):
         elif len(opaque_data) > MAX_RECEIVE_SIZE:
             error = vxi11.ERR_PARAMETER_ERROR
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error = self.device.device_write(opaque_data, flags, io_timeout)
                 
         result = (error, 0)
@@ -372,10 +370,8 @@ class Vxi11CoreHandler(Vxi11Handler):
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error, reason, opaque_data = self.device.device_read(request_size, term_char, flags, io_timeout)
 
         result = (error, reason, opaque_data)
@@ -405,10 +401,8 @@ class Vxi11CoreHandler(Vxi11Handler):
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error, stb = self.device.device_readstb(flags, io_timeout)
             
         result = (error, stb)
@@ -436,10 +430,8 @@ class Vxi11CoreHandler(Vxi11Handler):
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error = self.device.device_trigger(flags, io_timeout)
             
         self.turn_around()
@@ -469,10 +461,8 @@ class Vxi11CoreHandler(Vxi11Handler):
                 except KeyError:
                     error = vxi11.ERR_DEVICE_NOT_ACCESSIBLE
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error = self.device.device_clear(flags, io_timeout)
             
         self.turn_around()
@@ -492,10 +482,8 @@ class Vxi11CoreHandler(Vxi11Handler):
             if self.device.primary is not None and self.device.secondary is None:
                 error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
-            with self.device.lock.is_open(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock.is_open(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error = self.device.device_remote(flags, io_timeout)
             
         self.turn_around()
@@ -516,10 +504,8 @@ class Vxi11CoreHandler(Vxi11Handler):
             if self.device.primary is not None and self.device.secondary is None:
                 error=vxi11.ERR_OPERATION_NOT_SUPPORTED
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error = self.device.device_local(flags, io_timeout)
             
         self.turn_around()
@@ -640,10 +626,8 @@ class Vxi11CoreHandler(Vxi11Handler):
             logger.debug("command link %i != current device link %i)",link_id, self.link_id)
             error = vxi11.ERR_INVALID_LINK_IDENTIFIER
         else:
-            with self.device.lock(link_id, flags, lock_timeout) as error1:
-                if error1 != vxi11.ERR_NO_ERROR:
-                    error = error1
-                else:
+            with self.device.lock(link_id, flags, lock_timeout) as error:
+                if error == vxi11.ERR_NO_ERROR:
                     error, opaque_data_out = self.device.device_docmd(flags, io_timeout, cmd, network_order, data_size, opaque_data_in)
             
         result = error, opaque_data_out

@@ -396,6 +396,8 @@ class Vxi11CoreHandler(Vxi11Handler):
             #check if this is the link id for the bridged device and issue error according to spec
             if self.device.primary is not None and self.device.secondary is None:
                 # error=vxi11.ERR_OPERATION_NOT_SUPPORTED
+                logger.warning("illegal read_stb for bridged device")
+
                 try:
                     bridged=self.server.link_get_device_instance(link_id)
                     if self.device.device_name in  bridged.device_name:

@@ -21,9 +21,8 @@ def signal_handler(signal, frame):
                                         
 
 class GPIBLikeDefaultDevice(vxi11.instrument_device.DefaultInstrumentDevice):
-    def __init__(self, device_name, device_lock):
-        super().__init__(device_name, device_lock)
-        self.result = 'empty'
+    def __init__(self, device_name, device_lock, registry):
+        super().__init__(device_name, device_lock, registry)
         self.atn_enabled=False
         self.ren_enabled=False
         self.srq_active=False

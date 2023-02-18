@@ -21,13 +21,17 @@ Original source: http://svn.python.org/projects/python/trunk/Demo/rpc/rpc.py
 
 """
 
-import xdrlib
 import socket
-import os
+#import os
 import struct
 import logging
 
 import socketserver
+
+try:
+    import xdrlib
+except:
+    from . import xdrlib
 
 logger = logging.getLogger(__name__)
 

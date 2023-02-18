@@ -269,9 +269,13 @@ class DefaultInstrumentDevice(InstrumentDevice):
     is initialized.
     '''
 
+    def __init__(self, device_name, device_lock, registry=None):
+        super().init(device_name, device_lock)
+        self._registry=registry
+        self.result = ''
+
     def device_init(self):
         self.idn = 'python-vxi11-server', 'bbb', '1234', '567'
-        self.result = ''
         return
     
     def device_write(self, opaque_data, flags, io_timeout):
@@ -284,7 +288,7 @@ class DefaultInstrumentDevice(InstrumentDevice):
             mfg, model, sn, fw = self.idn
             self.result = "{},{},{},{}".format(mfg, model, sn, fw)
         elif cmd  == '*DEVICE_LIST?':
-            devs = self.device_list
+            devs = [] if self._registry is None else self._registry.directory()
             self.result = ''
             isFirst = True
             for dev in devs:

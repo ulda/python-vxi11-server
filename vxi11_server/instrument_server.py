@@ -169,8 +169,11 @@ class DeviceRegistry(object):
     def factory(self, name):
         item = self._registry[name]
 
-        device = item.device_class(name, item.lock)
-        device.device_list = self.directory()
+        if issubclass( item.device_class, Instrument.DefaultInstrumentDevice):
+            # give default instrument ability to get a list of all registered devices
+            device = item.device_class(name, item.lock, self)
+        else:
+            device = item.device_class(name, item.lock)
         
         return device
         
@@ -220,8 +223,8 @@ class Vxi11Server(socketserver.ThreadingMixIn, rpc.TCPServer):
         self._device_registry.remove(name)
         return
     
-    # def device_list(self):
-    #     return self._device_registry.directory()
+    def device_list(self):
+        return self._device_registry.directory()
     
 class Vxi11Handler(rpc.RPCRequestHandler):
     def addpackers(self):

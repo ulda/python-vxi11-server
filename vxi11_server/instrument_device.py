@@ -271,7 +271,7 @@ class DefaultInstrumentDevice(InstrumentDevice):
 
     def device_init(self):
         self.idn = 'python-vxi11-server', 'bbb', '1234', '567'
-        self.result = 'empty'
+        self.result = ''
         return
     
     def device_write(self, opaque_data, flags, io_timeout):
@@ -305,5 +305,7 @@ class DefaultInstrumentDevice(InstrumentDevice):
 
         #device-read returns opaque_data so encode it correctly
         opaque_data = self.result.encode("ascii")
+        # clear result after read
+        self.result=''
         
         return error, reason, opaque_data

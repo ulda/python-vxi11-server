@@ -725,9 +725,11 @@ class TCPServer(socketserver.TCPServer):
             #super(Vxi11Server, self).unregister()
             self.unregister()
         except socket.error as msg:
-            logger.error('Error: rpcbind -i not running? %s', msg)
+            logger.error('Error: rpcbind not reachable: %s', msg)
+            raise
         except RuntimeError as msg:
             logger.error('RuntimeError: %s (ignored)', msg)
+            raise
         try:
             self.register_pmap()
         except RuntimeError as msg:

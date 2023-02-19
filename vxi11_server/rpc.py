@@ -717,19 +717,20 @@ class TCPServer(socketserver.TCPServer):
     def __del__(self):
         # make sure to unregister on delete
         if self.registered:
-            self.unregister()
+            self.unregister_pmap()
         return
 
     def register(self):
+        # first unmap any registration for this mapping
         try:
-            #super(Vxi11Server, self).unregister()
-            self.unregister()
+            self.unregister_pmap()
         except socket.error as msg:
             logger.error('Error: rpcbind not reachable: %s', msg)
             raise
         except RuntimeError as msg:
             logger.error('RuntimeError: %s (ignored)', msg)
             raise
+        # now try to map ourself
         try:
             self.register_pmap()
         except RuntimeError as msg:
@@ -746,7 +747,7 @@ class TCPServer(socketserver.TCPServer):
         self.registered = True
         return
     
-    def unregister(self):
+    def unregister_pmap(self):
         host, port = self.server_address
         p = TCPPortMapperClient(host)
         if not p.unset(self.mapping):
@@ -754,7 +755,8 @@ class TCPServer(socketserver.TCPServer):
         self.registered = False
         return
     
-
+    def unregister(self):
+        self.unregister_pmap()
 
 
 

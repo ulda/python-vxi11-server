@@ -6,7 +6,7 @@ setup(
     name = 'python-vxi11-server',
     description = '''Python VXI-11 driver for controlling instruments over Ethernet
 and server for creating instruments''',
-    version = '1.0.2',
+    version = '1.1.0',
     long_description = '''This Python package supports the VXI-11 Ethernet
 instrument control protocol for controlling and creating VXI11 and LXI compatible instruments.''',
     download_url = 'https://github.com/ulda/python-vxi11-server',

@@ -669,9 +669,14 @@ class InstrumentServer():
     
     def close(self):
         logger.info('Closing...')
+        for dev in self.coreServer.device_list():
+            self.coreServer.device_unregister(dev)
+        
         self.coreServer.unregister()
         self.coreServer.shutdown()
         self.coreServer.server_close()
+
+        vxi11.IntrServer.stopServer()
 
         self.abortServer.shutdown()
         self.abortServer.server_close()

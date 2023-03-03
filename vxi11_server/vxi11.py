@@ -152,6 +152,8 @@ def parse_visa_resource_string(resource_string):
                 arg2 = m.group('arg2'),
                 suffix = m.group('suffix'),
         )
+    else:
+        return None
 
 # Exceptions
 class Vxi11Exception(Exception):

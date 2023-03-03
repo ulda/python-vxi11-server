@@ -176,7 +176,6 @@ class DeviceRegistry(object):
         return device
         
 class Vxi11Server(socketserver.ThreadingMixIn, rpc.TCPServer):
-    _next_device_index = 0
     _device_registry = DeviceRegistry()
     _link_registry = {}
 

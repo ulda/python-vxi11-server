@@ -597,6 +597,11 @@ class IntrServer(socketserver.ThreadingMixIn, rpc.TCPServer):
     def __init__(self, host, port ):
         rpc.TCPServer.__init__(self, host, DEVICE_INTR_PROG, DEVICE_INTR_VERS, port, IntrHandler)
         self.srq_registry={}
+
+    def server_close(self):
+        if self.INTR_SERVER == self:
+            self.INTR_SERVER=None
+        super().server_close()
         
 def list_devices(ip=None, timeout=1):
     "Detect VXI-11 devices on network"

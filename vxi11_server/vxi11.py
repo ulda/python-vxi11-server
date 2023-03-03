@@ -563,7 +563,6 @@ class IntrHandler(rpc.RPCRequestHandler):
         
 class IntrServer(socketserver.ThreadingMixIn, rpc.TCPServer):
     INTR_SERVER=None
-    SRQ_CLASS_REGISTRY={}
 
     @classmethod
     def getServer(cls):
@@ -581,24 +580,23 @@ class IntrServer(socketserver.ThreadingMixIn, rpc.TCPServer):
 
     @classmethod
     def stopServer(cls):
-        cls.INTR_SERVER.shutdown()
-        cls.INTR_SERVER.server_close()
+        if cls.INTR_SERVER is not None:
+            cls.INTR_SERVER.shutdown()
+            cls.INTR_SERVER.server_close()
+            cls.INTR_SERVER=None
 
-    @classmethod
-    def register_dev(cls,handle,device):
-        cls.SRQ_CLASS_REGISTRY[handle]=device
+    def register_dev(self,handle,device):
+        self.srq_registry[handle]=device
 
-    @classmethod
-    def unregister_dev(cls, handle):
-        del cls.SRQ_CLASS_REGISTRY[handle]
+    def unregister_dev(self, handle):
+        del self.srq_registry[handle]
 
-    @classmethod
-    def has_dev(cls,handle):
-        return handle in cls.SRQ_CLASS_REGISTRY
+    def has_dev(self,handle):
+        return handle in self.srq_registry
 
     def __init__(self, host, port ):
         rpc.TCPServer.__init__(self, host, DEVICE_INTR_PROG, DEVICE_INTR_VERS, port, IntrHandler)
-
+        self.srq_registry={}
         
 def list_devices(ip=None, timeout=1):
     "Detect VXI-11 devices on network"
@@ -965,7 +963,7 @@ class Device(object):
         
         # enable SRQ on the device
         handle=struct.pack("!L",self.client_id)
-        IntrServer.register_dev(handle,self)
+        serv.register_dev(handle,self)
         error=self.client.device_enable_srq(self.link,True,handle)
         if error:
             raise Vxi11Exception(error, 'device can not enable SRQ handling')
@@ -973,9 +971,10 @@ class Device(object):
     def disable_srq_handler(self):
         # disable srq handling and remove old handler
         handle=struct.pack("!L",self.client_id)
-        if IntrServer.has_dev(handle):
+        serv=IntrServer.getServer()
+        if serv.has_dev(handle):
             self.client.device_enable_srq(self.link,False,handle)
-            IntrServer.unregister_dev(handle)
+            serv.unregister_dev(handle)
             self.client.destroy_intr_chan()
             
     def on_srq(self,callback):

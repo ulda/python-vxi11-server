@@ -684,13 +684,13 @@ class InstrumentServer():
         #self.ch.setLevel(getattr(logging, loglevel))
 
         abortThread = threading.Thread(target=self.abortServer.serve_forever)
-        abortThread.setDaemon(True) # don't hang on exit
+        abortThread.daemon=True # don't hang on exit
         abortThread.start()
         logger.info('abortServer started...')
 
         self.coreServer.register()
         coreThread = threading.Thread(target=self.coreServer.serve_forever)
-        coreThread.setDaemon(True)
+        coreThread.daemon=True
         coreThread.start()
         logger.info('coreServer started...')
         return(True)

@@ -138,11 +138,9 @@ class DeviceItem(object):
         return
     
 class DeviceRegistry(object):
-    _next_device_index = 0
-    _registry = {}
-
     def __init__(self):
-        pass
+        self._next_device_index = 0
+        self._registry = {}
     
     def register(self, name, device_class):
         if name is None:

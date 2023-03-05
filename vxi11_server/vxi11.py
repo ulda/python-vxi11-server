@@ -976,6 +976,8 @@ class Device(object):
     def disable_srq_handler(self):
         # disable srq handling and remove old handler
         handle=struct.pack("!L",self.client_id)
+        if IntrServer.INTR_SERVER is None:
+            return
         serv=IntrServer.getServer()
         if serv.has_dev(handle):
             self.client.device_enable_srq(self.link,False,handle)

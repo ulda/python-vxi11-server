@@ -544,7 +544,7 @@ class IntrHandler(rpc.RPCRequestHandler):
         logger.debug("got srq for handle %r",handle)
         # find the device to send SRQ to via handle and registry
         try:
-            self.server.SRQ_CLASS_REGISTRY[handle].srq_callback()
+            self.server.srq_registry[handle].srq_callback()
         except KeyError:
             logger.error("got srq for unknown handle %r",handle)
             # we do not complain because nobody is waiting for an answer.

@@ -668,7 +668,7 @@ class InstrumentServer():
     
     def close(self):
         logger.info('Closing...')
-        for dev in self.coreServer.device_list():
+        for dev in list(self.coreServer.device_list()):
             self.coreServer.device_unregister(dev)
         
         self.coreServer.unregister()

@@ -5,6 +5,8 @@ import logging
 from  threading import Timer
 import time
 
+import faulthandler
+
 sys.path.append(os.path.abspath('..'))
 import vxi11_server as vxi11
 
@@ -14,6 +16,9 @@ _logging = logging.getLogger(__name__)
 def signal_handler(signal, frame):
     _logging.info('Handling Ctrl+C!')
     instr_server.close()
+
+    faulthandler.dump_traceback()
+    
     sys.exit(0)
                                         
 class SRQTestDevice(vxi11.InstrumentDevice):
@@ -75,6 +80,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     print('Press Ctrl+C to exit')
 
+    faulthandler.enable()
+    
     _logging.info('starting SRQ test device')
 
     instr_server = vxi11.InstrumentServer()

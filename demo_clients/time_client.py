@@ -1,4 +1,8 @@
-import vxi11
+import faulthandler
+
+import vxi11_server as vxi11
+
+faulthandler.enable()
 
 # with a default instrument, inst0 is implied.
 default_instr = vxi11.Instrument("TCPIP::127.0.0.1::INSTR")
